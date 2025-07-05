@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Real-Time ESP32 Device Map</title>
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    crossorigin=""
+  />
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      font-family: 'Segoe UI', sans-serif;
+      overflow: hidden;
+    }
+
+    #container {
+      display: flex;
+      height: 100vh;
+    }
+
+    #map {
+      flex: 2;
+    }
+
+    #sidebar {
+      flex: 1;
+      background-color: #f8f8f8;
+      padding: 20px;
+      overflow-y: auto;
+      border-left: 1px solid #ccc;
+    }
+
+    h2, h3 {
+      margin-top: 0;
+      color: #333;
+    }
+
+    .data-row {
+      margin-bottom: 10px;
+      font-size: 0.95em;
+    }
+
+    .data-label {
+      font-weight: bold;
+      display: inline-block;
+      min-width: 150px;
+    }
+
+    #status {
+      margin-top: 15px;
+      font-size: 0.9em;
+      color: green;
+    }
+
+    #weather div {
+      margin-bottom: 6px;
+    }
+  </style>
+</head>
+<body>
+
+<div id="container">
+  <div id="map"></div>
+
+  <div id="sidebar">
+    <h2>📡 Device Data</h2>
+    <div class="data-row"><span class="data-label">Latitude:</span> <span id="lat">-</span></div>
+    <div class="data-row"><span class="data-label">Longitude:</span> <span id="lon">-</span></div>
+    <div class="data-row"><span class="data-label">Temperature (°C):</span> <span id="temp">-</span></div>
+    <div class="data-row"><span class="data-label">Humidity (%):</span> <span id="hum">-</span></div>
+    <div class="data-row"><span class="data-label">Accel X (m/s²):</span> <span id="accel_x">-</span></div>
+    <div class="data-row"><span class="data-label">Accel Y (m/s²):</span> <span id="accel_y">-</span></div>
+    <div class="data-row"><span class="data-label">Accel Z (m/s²):</span> <span id="accel_z">-</span></div>
+    <div class="data-row"><span class="data-label">Magnitude (m/s²):</span> <span id="magnitude">-</span></div>
+    <div class="data-row"><span class="data-label">Button Pressed:</span> <span id="button">-</span></div>
+
+      <h3>🚨 Alerts</h3>
+     <div class="data-row"><span class="data-label">Latest Alert:</span> <span id="alert_latest">-</span></div>
+    <div class="data-row"><span class="data-label">Button Alert:</span> <span id="alert_button">-</span></div>
+    <div class="data-row"><span class="data-label">Geofence Alert:</span> <span id="alert_geofence">-</span></div>
+
+    <h3>🌊 Marine Weather</h3>
+    <div id="weather">Loading...</div>
+
+
+    <div id="status"></div>
+  </div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+<script>
+  const map = L.map('map').setView([0, 0], 2);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 18,
+    attribution: '© OpenStreetMap contributors'
+  }).addTo(map);
+
+  const marker = L.marker([0, 0]).addTo(map);
+
+  async function fetchData() {
+    try {
+      const res = await fetch('/map_data');
+      const data = await res.json();
+
+      if (data.lat !== null && data.lon !== null) {
+        marker.setLatLng([data.lat, data.lon]);
+        map.setView([data.lat, data.lon], 15);
+      }
+
+      document.getElementById('lat').textContent = data.lat ?? '-';
+      document.getElementById('lon').textContent = data.lon ?? '-';
+      document.getElementById('temp').textContent = data.temperature ?? '-';
+      document.getElementById('hum').textContent = data.humidity ?? '-';
+      document.getElementById('accel_x').textContent = data.accel ?? '-';
+      document.getElementById('accel_y').textContent = data.accel_y ?? '-';
+      document.getElementById('accel_z').textContent = data.accel_z ?? '-';
+      document.getElementById('magnitude').textContent = data.magnitude ?? '-';
+      document.getElementById('button').textContent = data.button ? 'Yes' : 'No';
+      document.getElementById('alert_latest').textContent = data.alerts?.latest ?? '-';
+      document.getElementById('alert_button').textContent = data.alerts?.button ?? '-';
+      document.getElementById('alert_geofence').textContent = data.alerts?.geofence ?? '-';
+
+
+      if (data.weather) {
+        let html = '';
+        for (const [key, val] of Object.entries(data.weather)) {
+          html += `<div><strong>${key.replace(/_/g, ' ')}:</strong> ${val}</div>`;
+        }
+        document.getElementById('weather').innerHTML = html;
+      } else {
+        document.getElementById('weather').textContent = 'No weather data';
+      }
+
+      document.getElementById('status').textContent = '✅ Last updated: ' + new Date(data.timestamp * 1000).toLocaleTimeString();
+
+    } catch (err) {
+      console.error('Fetch error:', err);
+      document.getElementById('status').textContent = '❌ Error fetching data';
+    }
+  }
+
+  fetchData();
+  setInterval(fetchData, 2000); // Refresh every 5 seconds
+</script>
+</body>
+</html>
