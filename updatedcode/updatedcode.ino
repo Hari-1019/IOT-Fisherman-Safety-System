@@ -8,10 +8,10 @@
 #include <math.h>
 
 // === WiFi & Firebase Configuration ===
-#define WIFI_SSID "Dialog 4G 582"
-#define WIFI_PASSWORD "A99d09d1"
-#define FIREBASE_HOST "esp32-iot-project-c74d7-default-rtdb.asia-southeast1.firebasedatabase.app"
-#define FIREBASE_AUTH "nbRsESjTDUoy0dsANkRFEjOkasPrzR5Wz2QDWKxg"
+#define WIFI_SSID ""
+#define WIFI_PASSWORD ""
+#define FIREBASE_HOST ""
+#define FIREBASE_AUTH ""
 
 // === Firebase Setup ===
 FirebaseData fbdo;
